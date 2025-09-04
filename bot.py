@@ -13,13 +13,15 @@ class ResponseButtons(discord.ui.View):
         await interaction.response.send_message("omg it worked", ephemeral=True)
 
 
+
+
 @bot.tree.command(name="sat", description="sat")
 async def sat(interaction: discord.Interaction, value: int):
     await interaction.response.send_message("hello!", ephemeral=True)
 
-@bot.command()
-async def testbuttons(ctx):
-    await ctx.send("hello", view = ResponseButtons())
+
+
+
 
 @bot.event
 async def on_ready():
