@@ -1,4 +1,7 @@
 import requests
+import random
+import time
+from enum import Enum
 
 GET_QUESTIONS_API = "https://practicesat.vercel.app/api/get-questions"
 QUESTION_BY_ID_API = "https://practicesat.vercel.app/api/question-by-id"
@@ -14,6 +17,42 @@ DOMAINS_LOOKUP = {
                    64: "Q", 
                    128: "S", 
                 }
+
+class QuestionType(Enum):
+    MULTIPLE_CHOICE = 0
+    STUDENT_PRODUCED_RESPONSE = 1
+
+    @classmethod
+    def fromMS(cls, ms):
+        if ms == "mcq": return cls.MULTIPLE_CHOICE
+        elif ms == "spr": return cls.STUDENT_PRODUCED_RESPONSE
+        else: raise ValueError('Expected "mcq" or "spr"')
+
+class QuestionDifficulty(Enum):
+    EASY = 0
+    MEDIUM = 1
+    HARD = 2
+
+    @classmethod
+    def fromEMH(cls, emh):
+        if emh == "E": return cls.EASY
+        elif emh == "M": return cls.MEDIUM
+        elif emh == "H": return cls.HARD
+        else: raise ValueError('Expected "E", "M", or "H"')
+
+class Question():
+    def __init__(self, id:str, difficulty:QuestionDifficulty, skill:str, domain:str, type:QuestionType, ansOptions, ansCorrect, rationale:str, stimulus:str, stem:str):
+        self.id = id
+        self.difficulty = difficulty
+        self.skill = skill
+        self.domain = domain
+
+        self.ansOptions = ansOptions
+        self.ansCorrect = ansCorrect
+        self.rationale = rationale
+        self.stimulus = stimulus
+        self.stem = stem
+        self.type = type
 
 def getDomains(information_and_ideas:bool,
                craft_and_structure:bool,
@@ -63,4 +102,37 @@ def getQuestionByID(id:str):
     else:
         print(f"error requestion questions. status: {response.status_code}, message: {response.text}")
 
-print(getQuestionByID("4becad44"))
+def getRandomQuestion(domains:int):
+    questions = getQuestions(domains)["data"]
+    questionID = questions[random.randint(0, len(questions) - 1)].get("questionId")
+
+    questionjson = getQuestionByID(questionID).get("data")
+    
+    question = questionjson.get("question")
+    problem = questionjson.get("problem")
+    
+    return Question(
+        question.get("questionId"),
+        QuestionDifficulty.fromEMH(question.get("difficulty")),
+        question.get("skill_desc"),
+        question.get("primary_class_cd_desc"),
+        QuestionType.fromMS(problem.get("type")),
+        problem.get("answerOptions", []),
+        problem.get("correct_answer", []),
+        problem.get("rationale"),
+        problem.get("stimulus"),
+        problem.get("stem")
+    )
+    
+randQuestion = getRandomQuestion(1)
+
+print(randQuestion.id)
+print(randQuestion.difficulty)
+print(randQuestion.skill)
+print(randQuestion.domain)
+print(randQuestion.type)
+print(randQuestion.ansOptions)
+print(randQuestion.ansCorrect)
+print(randQuestion.rationale)
+print(randQuestion.stimulus)
+print(randQuestion.stem)
