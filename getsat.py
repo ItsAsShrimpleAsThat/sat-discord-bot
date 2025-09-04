@@ -1,7 +1,7 @@
 import requests
 
 GET_QUESTIONS_API = "https://practicesat.vercel.app/api/get-questions"
-QUESTION_BY_ID_API = "https://practicesat.vercel.app/api/question-by-id/"
+QUESTION_BY_ID_API = "https://practicesat.vercel.app/api/question-by-id"
 
 DOMAINS_LOOKUP = { 
                    0: "", 
@@ -46,3 +46,21 @@ def getQuestionsRequestURL(domains:int):
     querystring = querystring.removesuffix(",")
     return GET_QUESTIONS_API + "?domains=" + querystring
 
+def getQuestions(domains:int):
+    response = requests.get(getQuestionsRequestURL(domains))
+    
+    if(response.status_code == 200):
+        return response.json()
+    else:
+        print(f"error requestion questions. status: {response.status_code}, message: {response.text}")
+
+def getQuestionByID(id:str):
+    url = QUESTION_BY_ID_API + "/" + id
+    response = requests.get(url)
+    
+    if(response.status_code == 200):
+        return response.json()
+    else:
+        print(f"error requestion questions. status: {response.status_code}, message: {response.text}")
+
+print(getQuestionByID("4becad44"))
