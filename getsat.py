@@ -1,7 +1,8 @@
 import requests
 import random
-import time
+import html
 from enum import Enum
+import re
 
 GET_QUESTIONS_API = "https://practicesat.vercel.app/api/get-questions"
 QUESTION_BY_ID_API = "https://practicesat.vercel.app/api/question-by-id"
@@ -102,6 +103,19 @@ def getQuestionByID(id:str):
     else:
         print(f"error requestion questions. status: {response.status_code}, message: {response.text}")
 
+def discordifyHTML(rawhtml:str):
+    noEntities = html.unescape(rawhtml)
+
+    discordified = re.sub(r'[\u00A0\u2007\u202F]+', " ", noEntities).strip()
+    discordified = re.sub("<p.*?>", "", discordified)
+    discordified = re.sub("</p.*?>", "\n", discordified)
+
+    discordified = re.sub("</?em.*?>", "***", discordified)
+    discordified = str.replace(discordified, "_", "\\_")
+
+    discordified = discordified.removesuffix("\n")
+    return discordified
+
 def getRandomQuestion(domains:int):
     questions = getQuestions(domains)["data"]
     questionID = questions[random.randint(0, len(questions) - 1)].get("questionId")
@@ -117,22 +131,23 @@ def getRandomQuestion(domains:int):
         question.get("skill_desc"),
         question.get("primary_class_cd_desc"),
         QuestionType.fromMS(problem.get("type")),
-        problem.get("answerOptions", []),
-        problem.get("correct_answer", []),
-        problem.get("rationale"),
-        problem.get("stimulus"),
-        problem.get("stem")
+        { k: discordifyHTML(v) for k, v in problem.get("answerOptions", dict()).items() },
+        list(map(discordifyHTML, problem.get("correct_answer", []))),
+        discordifyHTML(problem.get("rationale")),
+        discordifyHTML(problem.get("stimulus")),
+        discordifyHTML(problem.get("stem"))
     )
     
-randQuestion = getRandomQuestion(1)
+    
+# randQuestion = getRandomQuestion(1)
 
-print(randQuestion.id)
-print(randQuestion.difficulty)
-print(randQuestion.skill)
-print(randQuestion.domain)
-print(randQuestion.type)
-print(randQuestion.ansOptions)
-print(randQuestion.ansCorrect)
-print(randQuestion.rationale)
-print(randQuestion.stimulus)
-print(randQuestion.stem)
+# print(randQuestion.id)
+# print(randQuestion.difficulty)
+# print(randQuestion.skill)
+# print(randQuestion.domain)
+# print(randQuestion.type)
+# print(randQuestion.ansOptions)
+# print(randQuestion.ansCorrect)
+# print(randQuestion.rationale)
+# print(randQuestion.stimulus)
+# print(randQuestion.stem)
