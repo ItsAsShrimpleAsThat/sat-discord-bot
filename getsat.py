@@ -41,6 +41,13 @@ class QuestionDifficulty(Enum):
         elif emh == "H": return cls.HARD
         else: raise ValueError('Expected "E", "M", or "H"')
 
+    def toString(self):
+        stringLookup = { QuestionDifficulty.EASY: "Easy",
+                         QuestionDifficulty.MEDIUM: "Medium",
+                         QuestionDifficulty.HARD: "Hard" }
+
+        return stringLookup.get(self)        
+
 class Question():
     def __init__(self, id:str, difficulty:QuestionDifficulty, skill:str, domain:str, type:QuestionType, ansOptions, ansCorrect, rationale:str, stimulus:str, stem:str):
         self.id = id
@@ -104,13 +111,15 @@ def getQuestionByID(id:str):
         print(f"error requestion questions. status: {response.status_code}, message: {response.text}")
 
 def discordifyHTML(rawhtml:str):
+    print(rawhtml)
     noEntities = html.unescape(rawhtml)
 
     discordified = re.sub(r'[\u00A0\u2007\u202F]+', " ", noEntities).strip()
     discordified = re.sub("<p.*?>", "", discordified)
     discordified = re.sub("</p.*?>", "\n", discordified)
 
-    discordified = re.sub("</?em.*?>", "***", discordified)
+    discordified = re.sub("</?em.*?>", "*", discordified)
+    discordified = re.sub("</?span.*?>", "", discordified)
     discordified = str.replace(discordified, "_", "\\_")
 
     discordified = discordified.removesuffix("\n")
@@ -133,9 +142,9 @@ def getRandomQuestion(domains:int):
         QuestionType.fromMS(problem.get("type")),
         { k: discordifyHTML(v) for k, v in problem.get("answerOptions", dict()).items() },
         list(map(discordifyHTML, problem.get("correct_answer", []))),
-        discordifyHTML(problem.get("rationale")),
-        discordifyHTML(problem.get("stimulus")),
-        discordifyHTML(problem.get("stem"))
+        discordifyHTML(problem.get("rationale", "")),
+        discordifyHTML(problem.get("stimulus" , "")),
+        discordifyHTML(problem.get("stem", ""))
     )
     
     

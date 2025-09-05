@@ -1,23 +1,58 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+import getsat
 
+# discord stuff
 bot = commands.Bot(command_prefix = ")", intents=discord.Intents.all())
 
-class ResponseButtons(discord.ui.View):
-    def __init__(self, *, timeout=180):
-        super().__init__(timeout=timeout)
 
-    @discord.ui.button(label="test",style=discord.ButtonStyle.blurple)
-    async def optionA(self, interaction:discord.Interaction, button:discord.ui.Button):
-        await interaction.response.send_message("omg it worked", ephemeral=True)
+# sat settings
+domains = getsat.getDomains(True, True, True, True, False, False, False, False)
+question = getsat.getRandomQuestion(domains)
+
+class MCQButtons(discord.ui.View):
+    def __init__(self, *, ansOptions, ansCorrect, rationale:str):
+        self.ansOptions = ansOptions
+        self.ansCorrect = ansCorrect
+        self.rationale = rationale
+        super().__init__(timeout=None)
+
+        for option in ansOptions:
+            button = discord.ui.Button(label=option, style=discord.ButtonStyle.primary, custom_id=option)
+            print(ansCorrect)
+
+            button.callback = self.callback(option)
+            self.add_item(button)
+
+    def callback(self, option):
+        async def callback(interaction:discord.Interaction):
+            if(option in self.ansCorrect):
+                await interaction.response.send_message("# Correct!\n" + self.rationale, ephemeral=True)
+            else:
+                await interaction.response.send_message("# Incorrect!\n" + self.rationale, ephemeral=True)
+            
+            self.stop()
+        return callback
+    
+    
+
+    
 
 
 
 
 @bot.tree.command(name="sat", description="sat")
-async def sat(interaction: discord.Interaction, value: int):
-    await interaction.response.send_message("hello!", ephemeral=True)
+async def sat(interaction: discord.Interaction):
+    message = "# SAT Question of the Day!\n"
+
+    message += question.stimulus + "\n"
+    message += question.stem + "\n"
+    message += "\n"
+    for k, v in question.ansOptions.items():
+        message += k + ") " + v + "\n"
+
+    await interaction.response.send_message(message, view=MCQButtons(ansOptions=question.ansOptions, ansCorrect=question.ansCorrect, rationale=question.rationale))
 
 
 
