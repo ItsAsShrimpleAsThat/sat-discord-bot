@@ -2,10 +2,14 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import getsat
+import json
 
 # discord stuff
 bot = commands.Bot(command_prefix = ")", intents=discord.Intents.all())
 
+saveFile = open("save.sat", "r")
+# save = json.load(saveFile)
+saveFile.close()
 
 # sat settings
 domains = getsat.getDomains(True, True, True, True, False, False, False, False)
@@ -16,6 +20,7 @@ class MCQButtons(discord.ui.View):
         self.ansOptions = ansOptions
         self.ansCorrect = ansCorrect
         self.rationale = rationale
+        self.usersThatAnswered = set()
         super().__init__(timeout=None)
 
         for option in ansOptions:
@@ -27,12 +32,16 @@ class MCQButtons(discord.ui.View):
 
     def callback(self, option):
         async def callback(interaction:discord.Interaction):
+            if(interaction.user.id in self.usersThatAnswered):
+                await interaction.response.send_message("You've already answered this question!", ephemeral=True)
+                return
+            
+            self.usersThatAnswered.add(interaction.user.id)
             if(option in self.ansCorrect):
                 await interaction.response.send_message("# Correct!\n" + self.rationale, ephemeral=True)
             else:
                 await interaction.response.send_message("# Incorrect!\n" + self.rationale, ephemeral=True)
             
-            self.stop()
         return callback
     
     
@@ -44,6 +53,7 @@ class MCQButtons(discord.ui.View):
 
 @bot.tree.command(name="sat", description="sat")
 async def sat(interaction: discord.Interaction):
+    global question
     message = "# SAT Question of the Day!\n"
 
     message += question.stimulus + "\n"
@@ -53,6 +63,8 @@ async def sat(interaction: discord.Interaction):
         message += k + ") " + v + "\n"
 
     await interaction.response.send_message(message, view=MCQButtons(ansOptions=question.ansOptions, ansCorrect=question.ansCorrect, rationale=question.rationale))
+    
+    question = getsat.getRandomQuestion(domains)
 
 
 
