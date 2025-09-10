@@ -12,7 +12,7 @@ saveFile = open("save.sat", "r")
 saveFile.close()
 
 # sat settings
-domains = getsat.getDomains(True, True, True, True, False, False, False, False)
+domains = getsat.getDomains(True, False, False, False, False, False, False, False)
 question = getsat.getRandomQuestion(domains)
 
 class MCQButtons(discord.ui.View):

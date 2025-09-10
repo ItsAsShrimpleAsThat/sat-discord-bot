@@ -110,7 +110,12 @@ def getQuestionByID(id:str):
     else:
         print(f"error requestion questions. status: {response.status_code}, message: {response.text}")
 
-def discordifyTable(tablehtml):
+def discordifyTable(tablematch):
+    tablehtml = tablematch.group()
+    
+    caption = re.search("<caption.*?>.*?<p.*?>(.*?)</p>.*?</caption>", tablehtml).group(1)
+    
+
     # table = "## " + re.search("<caption.*?>(.*?)</caption>", tablehtml)
     seperatedtheadMatch = re.search("<thead.*?>(.*?)</thead>(.*)", tablehtml)
     insidethead = seperatedtheadMatch.group(1)
@@ -135,7 +140,7 @@ def discordifyTable(tablehtml):
             columnWidths[i] = max(columnWidths[i], len(tableRows[j][i]))
 
 
-    discordified = "```"
+    discordified = "# " + caption + "\n```"
     for i in range(len(tableHeaders)):
         discordified += tableHeaders[i]
         discordified += (" " * (columnWidths[i] - len(tableHeaders[i]) + (2 if i < numColumns - 1 else 0)))
@@ -150,14 +155,19 @@ def discordifyTable(tablehtml):
             discordified += (" " * (columnWidths[j] - len(tableRows[i][j]) + (2 if j < numColumns - 1 else 0)))
 
     discordified += "```"
+    return discordified
     
 # discordifyTable(r'<thead><tr><th scope="col" style="text-align: center;vertical-align: bottom;">Country</th><th scope="col" style="text-align: center;vertical-align: bottom;">1995</th><th scope="col" style="text-align: center;vertical-align: bottom;">2020</th></tr></thead><tbody><tr><th scope="row" style="text-align: left;">Canada</th><td style="text-align: center;">0.73</td><td style="text-align: center;">0.59</td></tr><tr><th scope="row" style="text-align: left;">Indonesia</th><td style="text-align: center;">0.44</td><td style="text-align: center;">0.51</td></tr><tr><th scope="row" style="text-align: left;">Kazakhstan</th><td style="text-align: center;">0.26</td><td style="text-align: center;">0.55</td></tr><tr><th scope="row" style="text-align: left;">Chile</th><td style="text-align: center;">2.49</td><td style="text-align: center;">5.73</td></tr></tbody>')
 
 def discordifyHTML(rawhtml:str):
     print(rawhtml)
+    print("-------------------------------")
     noEntities = html.unescape(rawhtml)
 
     discordified = re.sub(r'[\u00A0\u2007\u202F]+', " ", noEntities).strip()
+    discordified = re.sub("<figure.*?>", "", discordified)
+    discordified = re.sub("</figure>", "", discordified)
+    discordified = re.sub("<table.*?>.*?</table>", discordifyTable, discordified)
     discordified = re.sub("<p.*?>", "", discordified)
     discordified = re.sub("</p.*?>", "\n", discordified)
 
@@ -191,6 +201,7 @@ def getRandomQuestion(domains:int):
         discordifyHTML(problem.get("stem", ""))
     )
     
+# print(discordifyHTML(r'<p><figure class="table"><table class="gdr"><caption style="caption-side: top;"><p style="text-align: center;">Millions of Metric Tons of Copper Mined in 1995 and 2020</p></caption><thead><tr><th scope="col" style="text-align: center;vertical-align: bottom;">Country</th><th scope="col" style="text-align: center;vertical-align: bottom;">1995</th><th scope="col" style="text-align: center;vertical-align: bottom;">2020</th></tr></thead><tbody><tr><th scope="row" style="text-align: left;">Canada</th><td style="text-align: center;">0.73</td><td style="text-align: center;">0.59</td></tr><tr><th scope="row" style="text-align: left;">Indonesia</th><td style="text-align: center;">0.44</td><td style="text-align: center;">0.51</td></tr><tr><th scope="row" style="text-align: left;">Kazakhstan</th><td style="text-align: center;">0.26</td><td style="text-align: center;">0.55</td></tr><tr><th scope="row" style="text-align: left;">Chile</th><td style="text-align: center;">2.49</td><td style="text-align: center;">5.73</td></tr></tbody></table></figure></p>'))
     
 # randQuestion = getRandomQuestion(1)
 
