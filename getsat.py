@@ -110,6 +110,49 @@ def getQuestionByID(id:str):
     else:
         print(f"error requestion questions. status: {response.status_code}, message: {response.text}")
 
+def discordifyTable(tablehtml):
+    # table = "## " + re.search("<caption.*?>(.*?)</caption>", tablehtml)
+    seperatedtheadMatch = re.search("<thead.*?>(.*?)</thead>(.*)", tablehtml)
+    insidethead = seperatedtheadMatch.group(1)
+    outsidethead = seperatedtheadMatch.group(2)
+    tableHeaders = re.findall("<th\\b.*?>(.*?)</th>", insidethead)
+
+    tableRows = re.findall("<tr\\b.*?>(.*?)</tr>", outsidethead)
+
+    for i in range(len(tableRows)):
+        row = re.findall("<td\\b.*?>(.*?)</td>|<th\\b.*?>(.*?)</th>", tableRows[i])
+
+        tableRows[i] = [c[0] or c[1] for c in row]
+
+    numRows = len(tableRows)
+    numColumns = len(tableHeaders)
+    columnWidths = [0] * numColumns
+    
+    for i in range(numColumns):
+        columnWidths[i] = max(columnWidths[i], len(tableHeaders[i]))
+
+        for j in range(numRows):
+            columnWidths[i] = max(columnWidths[i], len(tableRows[j][i]))
+
+
+    discordified = "```"
+    for i in range(len(tableHeaders)):
+        discordified += tableHeaders[i]
+        discordified += (" " * (columnWidths[i] - len(tableHeaders[i]) + (2 if i < numColumns - 1 else 0)))
+
+    discordified += "\n"
+    discordified += "-" * ((len(tableHeaders) - 1) * 2 + sum(columnWidths))
+
+    for i in range(len(tableRows)):
+        discordified += "\n"
+        for j in range(len(tableRows[i])):
+            discordified += tableRows[i][j]
+            discordified += (" " * (columnWidths[j] - len(tableRows[i][j]) + (2 if j < numColumns - 1 else 0)))
+
+    discordified += "```"
+    
+# discordifyTable(r'<thead><tr><th scope="col" style="text-align: center;vertical-align: bottom;">Country</th><th scope="col" style="text-align: center;vertical-align: bottom;">1995</th><th scope="col" style="text-align: center;vertical-align: bottom;">2020</th></tr></thead><tbody><tr><th scope="row" style="text-align: left;">Canada</th><td style="text-align: center;">0.73</td><td style="text-align: center;">0.59</td></tr><tr><th scope="row" style="text-align: left;">Indonesia</th><td style="text-align: center;">0.44</td><td style="text-align: center;">0.51</td></tr><tr><th scope="row" style="text-align: left;">Kazakhstan</th><td style="text-align: center;">0.26</td><td style="text-align: center;">0.55</td></tr><tr><th scope="row" style="text-align: left;">Chile</th><td style="text-align: center;">2.49</td><td style="text-align: center;">5.73</td></tr></tbody>')
+
 def discordifyHTML(rawhtml:str):
     print(rawhtml)
     noEntities = html.unescape(rawhtml)
@@ -119,6 +162,7 @@ def discordifyHTML(rawhtml:str):
     discordified = re.sub("</p.*?>", "\n", discordified)
 
     discordified = re.sub("</?em.*?>", "*", discordified)
+    discordified = re.sub("<span.*?>blank</span>", "", discordified)
     discordified = re.sub("</?span.*?>", "", discordified)
     discordified = str.replace(discordified, "_", "\\_")
 
