@@ -12,7 +12,7 @@ saveFile = open("save.sat", "r")
 saveFile.close()
 
 # sat settings
-domains = getsat.getDomains(True, False, False, False, False, False, False, False)
+domains = getsat.getDomains(False, False, False, True, False, False, False, False)
 question = getsat.getRandomQuestion(domains)
 
 class MCQButtons(discord.ui.View):
@@ -62,7 +62,11 @@ async def sat(interaction: discord.Interaction):
     for k, v in question.ansOptions.items():
         message += k + ") " + v + "\n"
 
-    await interaction.response.send_message(message, view=MCQButtons(ansOptions=question.ansOptions, ansCorrect=question.ansCorrect, rationale=question.rationale))
+    files = []
+    for img in question.images:
+        files.append(discord.File(img, "sat.png"))
+
+    await interaction.response.send_message(message, view=MCQButtons(ansOptions=question.ansOptions, ansCorrect=question.ansCorrect, rationale=question.rationale),files=files)
     
     question = getsat.getRandomQuestion(domains)
 

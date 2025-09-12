@@ -4,7 +4,7 @@ import html
 from enum import Enum
 import re
 import os
-import imgkit
+import htmlrender
 
 GET_QUESTIONS_API = "https://practicesat.vercel.app/api/get-questions"
 QUESTION_BY_ID_API = "https://practicesat.vercel.app/api/question-by-id"
@@ -55,7 +55,7 @@ class QuestionDifficulty(Enum):
         return stringLookup.get(self)        
 
 class Question():
-    def __init__(self, id:str, difficulty:QuestionDifficulty, skill:str, domain:str, type:QuestionType, ansOptions, ansCorrect, rationale:str, stimulus:str, stem:str):
+    def __init__(self, id:str, difficulty:QuestionDifficulty, skill:str, domain:str, type:QuestionType, ansOptions, ansCorrect, rationale:str, stimulus:str, stem:str, images:list):
         self.id = id
         self.difficulty = difficulty
         self.skill = skill
@@ -67,6 +67,7 @@ class Question():
         self.stimulus = stimulus
         self.stem = stem
         self.type = type
+        self.images = images
 
 def getDomains(information_and_ideas:bool,
                craft_and_structure:bool,
@@ -165,15 +166,17 @@ def discordifyTable(tablematch):
     
 # discordifyTable(r'<thead><tr><th scope="col" style="text-align: center;vertical-align: bottom;">Country</th><th scope="col" style="text-align: center;vertical-align: bottom;">1995</th><th scope="col" style="text-align: center;vertical-align: bottom;">2020</th></tr></thead><tbody><tr><th scope="row" style="text-align: left;">Canada</th><td style="text-align: center;">0.73</td><td style="text-align: center;">0.59</td></tr><tr><th scope="row" style="text-align: left;">Indonesia</th><td style="text-align: center;">0.44</td><td style="text-align: center;">0.51</td></tr><tr><th scope="row" style="text-align: left;">Kazakhstan</th><td style="text-align: center;">0.26</td><td style="text-align: center;">0.55</td></tr><tr><th scope="row" style="text-align: left;">Chile</th><td style="text-align: center;">2.49</td><td style="text-align: center;">5.73</td></tr></tbody>')
 
-def discordifyHTML(rawhtml:str):
+def discordifyHTML(rawhtml:str, images:list=[]):
     print(rawhtml)
     print("-------------------------------")
     noEntities = html.unescape(rawhtml)
 
     discordified = re.sub(r'[\u00A0\u2007\u202F]+', " ", noEntities).strip()
-    discordified = re.sub("<figure.*?>", "", discordified)
-    discordified = re.sub("</figure>", "", discordified)
-    discordified = re.sub("<table.*?>.*?</table>", discordifyTable, discordified)
+    imagehtmls = re.findall("<figure.*?>.*?</figure>", discordified)
+
+    for imagehtml in imagehtmls:
+        images.append(htmlrender.getImageBytes(imagehtml))
+
     discordified = re.sub("<p.*?>", "", discordified)
     discordified = re.sub("</p.*?>", "\n", discordified)
 
@@ -193,6 +196,7 @@ def getRandomQuestion(domains:int):
     
     question = questionjson.get("question")
     problem = questionjson.get("problem")
+    images = []
     
     return Question(
         question.get("questionId"),
@@ -203,8 +207,9 @@ def getRandomQuestion(domains:int):
         { k: discordifyHTML(v) for k, v in problem.get("answerOptions", dict()).items() },
         list(map(discordifyHTML, problem.get("correct_answer", []))),
         discordifyHTML(problem.get("rationale", "")),
-        discordifyHTML(problem.get("stimulus" , "")),
-        discordifyHTML(problem.get("stem", ""))
+        discordifyHTML(problem.get("stimulus" , ""), images),
+        discordifyHTML(problem.get("stem", ""), images),
+        images
     )
     
 # print(discordifyHTML(r'<p><figure class="table"><table class="gdr"><caption style="caption-side: top;"><p style="text-align: center;">Millions of Metric Tons of Copper Mined in 1995 and 2020</p></caption><thead><tr><th scope="col" style="text-align: center;vertical-align: bottom;">Country</th><th scope="col" style="text-align: center;vertical-align: bottom;">1995</th><th scope="col" style="text-align: center;vertical-align: bottom;">2020</th></tr></thead><tbody><tr><th scope="row" style="text-align: left;">Canada</th><td style="text-align: center;">0.73</td><td style="text-align: center;">0.59</td></tr><tr><th scope="row" style="text-align: left;">Indonesia</th><td style="text-align: center;">0.44</td><td style="text-align: center;">0.51</td></tr><tr><th scope="row" style="text-align: left;">Kazakhstan</th><td style="text-align: center;">0.26</td><td style="text-align: center;">0.55</td></tr><tr><th scope="row" style="text-align: left;">Chile</th><td style="text-align: center;">2.49</td><td style="text-align: center;">5.73</td></tr></tbody></table></figure></p>'))
