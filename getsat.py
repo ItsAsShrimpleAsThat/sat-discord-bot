@@ -3,9 +3,15 @@ import random
 import html
 from enum import Enum
 import re
+import os
+import imgkit
 
 GET_QUESTIONS_API = "https://practicesat.vercel.app/api/get-questions"
 QUESTION_BY_ID_API = "https://practicesat.vercel.app/api/question-by-id"
+
+BIN = "/home/container/wk/bin/wkhtmltoimage" #in server
+LIB = "/home/container/wk/lib"
+os.environ["LD_LIBRARY_PATH"] = LIB + ":" + os.environ.get("LD_LIBRARY_PATH", "")
 
 DOMAINS_LOOKUP = { 
                    0: "", 
