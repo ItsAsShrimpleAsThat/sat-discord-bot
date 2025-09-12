@@ -173,6 +173,7 @@ def discordifyHTML(rawhtml:str, images:list=[]):
 
     discordified = re.sub(r'[\u00A0\u2007\u202F]+', " ", noEntities).strip()
     imagehtmls = re.findall("<figure.*?>.*?</figure>", discordified)
+    discordified = str.replace(discordified, "_", "\\_")
 
     for imagehtml in imagehtmls:
         images.append(htmlrender.getImageBytes(imagehtml))
@@ -181,11 +182,18 @@ def discordifyHTML(rawhtml:str, images:list=[]):
     discordified = re.sub("</p.*?>", "\n", discordified)
 
     discordified = re.sub("</?em.*?>", "*", discordified)
-    discordified = re.sub("<span.*?>blank</span>", "", discordified)
-    discordified = re.sub("</?span.*?>", "", discordified)
-    discordified = str.replace(discordified, "_", "\\_")
+    discordified = re.sub(
+        r'<span[^>]*\bclass="[^"]*\bsr-only\b[^"]*"[^>]*>\s*blank\s*</span>',
+        "",
+        discordified,
+        flags=re.I | re.S,
+    ) # chatgpt wrote this regex i have no fucking clue what this does
+    discordified = re.sub("<span.*?>", "", discordified)
+    discordified = re.sub("</span.*?>", "", discordified)
 
     discordified = discordified.removesuffix("\n")
+
+    print(discordified)
     return discordified
 
 def getRandomQuestion(domains:int):
