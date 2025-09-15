@@ -12,7 +12,7 @@ saveFile = open("save.sat", "r")
 saveFile.close()
 
 # sat settings
-domains = getsat.getDomains(False, False, False, True, False, False, False, False)
+domains = getsat.getDomains(True, True, True, True, False, False, False, False)
 question = getsat.getRandomQuestion(domains)
 
 class MCQButtons(discord.ui.View):
@@ -55,6 +55,8 @@ class MCQButtons(discord.ui.View):
 async def sat(interaction: discord.Interaction):
     global question
     message = "# SAT Question of the Day!\n"
+    message += "Difficulty: " + question.difficulty.toString() + "\n"
+    message += "Domain: " + question.domain + "\n\n"
 
     message += question.stimulus + "\n"
     message += question.stem + "\n"
