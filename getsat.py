@@ -108,7 +108,7 @@ def getQuestions(domains:int):
     else:
         print(f"error requestion questions. status: {response.status_code}, message: {response.text}")
 
-def getQuestionByID(id:str):
+def getQuestionJSONByID(id:str):
     url = QUESTION_BY_ID_API + "/" + id
     response = requests.get(url)
     
@@ -117,7 +117,8 @@ def getQuestionByID(id:str):
     else:
         print(f"error requestion questions. status: {response.status_code}, message: {response.text}")
 
-def discordifyHTML(rawhtml:str, images:list=[]):
+def discordifyHTML(rawhtml:str, images:list=None):
+    images = images or []
     print(rawhtml)
     print("-------------------------------")
     noEntities = html.unescape(rawhtml)
@@ -142,6 +143,10 @@ def discordifyHTML(rawhtml:str, images:list=[]):
     discordified = re.sub("<span.*?>", "", discordified)
     discordified = re.sub("</span.*?>", "", discordified)
 
+    discordified = re.sub(r"<blockquote.*?>\s*", "> ", discordified)
+    discordified = re.sub(r"\n</blockquote", "</blockquote", discordified)
+    discordified = re.sub(r"</blockquote>(?!\n)", "\n", discordified)
+
     discordified = discordified.removesuffix("\n")
 
     print(discordified)
@@ -151,7 +156,7 @@ def getRandomQuestion(domains:int):
     questions = getQuestions(domains)["data"]
     questionID = questions[random.randint(0, len(questions) - 1)].get("questionId")
 
-    questionjson = getQuestionByID(questionID).get("data")
+    questionjson = getQuestionJSONByID(questionID).get("data")
     
     question = questionjson.get("question")
     problem = questionjson.get("problem")
@@ -171,6 +176,28 @@ def getRandomQuestion(domains:int):
         images
     )
     
+def getQuestionByID(id:str):
+    questionjson = getQuestionJSONByID(id).get("data")
+    
+    question = questionjson.get("question")
+    problem = questionjson.get("problem")
+    images = []
+    
+    return Question(
+        question.get("questionId"),
+        QuestionDifficulty.fromEMH(question.get("difficulty")),
+        question.get("skill_desc"),
+        question.get("primary_class_cd_desc"),
+        QuestionType.fromMS(problem.get("type")),
+        { k: discordifyHTML(v) for k, v in problem.get("answerOptions", dict()).items() },
+        list(map(discordifyHTML, problem.get("correct_answer", []))),
+        discordifyHTML(problem.get("rationale", "")),
+        discordifyHTML(problem.get("stimulus" , ""), images),
+        discordifyHTML(problem.get("stem", ""), images),
+        images
+    )
+    
+
 # print(discordifyHTML(r'<p><figure class="table"><table class="gdr"><caption style="caption-side: top;"><p style="text-align: center;">Millions of Metric Tons of Copper Mined in 1995 and 2020</p></caption><thead><tr><th scope="col" style="text-align: center;vertical-align: bottom;">Country</th><th scope="col" style="text-align: center;vertical-align: bottom;">1995</th><th scope="col" style="text-align: center;vertical-align: bottom;">2020</th></tr></thead><tbody><tr><th scope="row" style="text-align: left;">Canada</th><td style="text-align: center;">0.73</td><td style="text-align: center;">0.59</td></tr><tr><th scope="row" style="text-align: left;">Indonesia</th><td style="text-align: center;">0.44</td><td style="text-align: center;">0.51</td></tr><tr><th scope="row" style="text-align: left;">Kazakhstan</th><td style="text-align: center;">0.26</td><td style="text-align: center;">0.55</td></tr><tr><th scope="row" style="text-align: left;">Chile</th><td style="text-align: center;">2.49</td><td style="text-align: center;">5.73</td></tr></tbody></table></figure></p>'))
     
 # randQuestion = getRandomQuestion(1)

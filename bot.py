@@ -54,6 +54,7 @@ class MCQButtons(discord.ui.View):
 @bot.tree.command(name="sat", description="sat")
 async def sat(interaction: discord.Interaction):
     global question
+    print(question.id)
     message = "# SAT Question of the Day!\n"
     message += "Difficulty: " + question.difficulty.toString() + "\n"
     message += "Domain: " + question.domain + "\n\n"
@@ -72,6 +73,27 @@ async def sat(interaction: discord.Interaction):
     
     question = getsat.getRandomQuestion(domains)
 
+
+@bot.tree.command(name="blockquote", description="sat")
+async def blockquote(interaction: discord.Interaction):
+    blockquotequestion = getsat.getQuestionByID("ba974387")
+    message = "# SAT Question of the Day!\n"
+    message += "Difficulty: " + blockquotequestion.difficulty.toString() + "\n"
+    message += "Domain: " + blockquotequestion.domain + "\n\n"
+
+    message += blockquotequestion.stimulus + "\n"
+    message += blockquotequestion.stem + "\n"
+    message += "\n"
+    for k, v in blockquotequestion.ansOptions.items():
+        message += k + ") " + v + "\n"
+
+    files = []
+    for img in blockquotequestion.images:
+        files.append(discord.File(img, "sat.png"))
+
+    await interaction.response.send_message(message, view=MCQButtons(ansOptions=blockquotequestion.ansOptions, ansCorrect=blockquotequestion.ansCorrect, rationale=blockquotequestion.rationale),files=files)
+
+#     await interaction.response.send_message()
 
 
 
