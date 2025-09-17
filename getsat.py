@@ -5,6 +5,7 @@ from enum import Enum
 import re
 import os
 import htmlrender
+from bs4 import BeautifulSoup, NavigableString
 
 GET_QUESTIONS_API = "https://practicesat.vercel.app/api/get-questions"
 QUESTION_BY_ID_API = "https://practicesat.vercel.app/api/question-by-id"
@@ -117,6 +118,50 @@ def getQuestionJSONByID(id:str):
     else:
         print(f"error requestion questions. status: {response.status_code}, message: {response.text}")
 
+def discordifyUListHelper(tag, nestLevel = 0) -> list:
+    lines = []
+
+    for li in tag.find_all("li", recursive=False):
+        parts = []
+
+        # filters out any nested lists inside of our current ul
+        for child in li.children:
+            if isinstance(child, NavigableString):
+                parts.append(str(child))
+            else:
+                name = getattr(child, "name", "").lower()
+                if name not in ("ul", "ol"):
+                    parts.append(child.get_text(" ", strip=True))
+
+        text = " ".join(p.strip() for p in parts if p and p.strip())
+        if text:
+            prefix = "• " if nestLevel == 0 else ("    " * nestLevel + "▪ ")
+            lines.append(prefix + text)
+
+        # run this code on any nested uls
+        nestedul = li.find("ul", recursive=False)
+        if nestedul:
+            lines.extend(discordifyUListHelper(nestedul, nestLevel + 1))
+
+    return lines
+
+def discordifyUList(html):
+    lines = discordifyUListHelper(html)
+    return "\n".join(lines)
+        
+sadfsaf = """
+    <ul>
+    <li>Item 1</li>
+    <li>Item 2
+        <ul>
+        <li>Subitem A</li>
+        <li>Subitem B</li>
+        </ul>
+    </li>
+    <li>Item 3</li>
+    </ul>
+    """
+
 def discordifyHTML(rawhtml:str, images:list=None):
     images = images or []
     print(rawhtml)
@@ -147,10 +192,21 @@ def discordifyHTML(rawhtml:str, images:list=None):
     discordified = re.sub(r"\n</blockquote", "</blockquote", discordified)
     discordified = re.sub(r"</blockquote>(?!\n)", "\n", discordified)
 
+    soup = BeautifulSoup(discordified, "html.parser")
+    for ul in soup.find_all("ul"):
+        if ul.find_parent("ul"):
+            continue 
+        rendered = discordifyUList(ul)
+        ul.replace_with(NavigableString(rendered))
+    discordified = str(soup)
+
     discordified = discordified.removesuffix("\n")
 
     print(discordified)
+    print("-------------------------------")
     return discordified
+
+# print(discordifyHTML(sadfsaf))
 
 def getRandomQuestion(domains:int):
     questions = getQuestions(domains)["data"]

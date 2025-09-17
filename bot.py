@@ -76,22 +76,24 @@ async def sat(interaction: discord.Interaction):
 
 @bot.tree.command(name="blockquote", description="sat")
 async def blockquote(interaction: discord.Interaction):
-    blockquotequestion = getsat.getQuestionByID("ba974387")
-    message = "# SAT Question of the Day!\n"
-    message += "Difficulty: " + blockquotequestion.difficulty.toString() + "\n"
-    message += "Domain: " + blockquotequestion.domain + "\n\n"
+    html = """
+    <ul>
+    <li>Item 1</li>
+    <li>Item 2
+        <ul>
+        <li>Subitem A</li>
+        <li>Subitem B</li>
+        </ul>
+    </li>
+    <li>Item 3</li>
+    </ul>
+    """
+    print('-----------------------------')
+    msg = getsat.discordifyHTML(html)
+    print("discordified ul")
+    print(msg)
 
-    message += blockquotequestion.stimulus + "\n"
-    message += blockquotequestion.stem + "\n"
-    message += "\n"
-    for k, v in blockquotequestion.ansOptions.items():
-        message += k + ") " + v + "\n"
-
-    files = []
-    for img in blockquotequestion.images:
-        files.append(discord.File(img, "sat.png"))
-
-    await interaction.response.send_message(message, view=MCQButtons(ansOptions=blockquotequestion.ansOptions, ansCorrect=blockquotequestion.ansCorrect, rationale=blockquotequestion.rationale),files=files)
+    await interaction.response.send_message(msg)
 
 #     await interaction.response.send_message()
 
