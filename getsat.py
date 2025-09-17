@@ -14,6 +14,9 @@ BIN = "/home/container/wk/bin/wkhtmltoimage" #in server
 LIB = "/home/container/wk/lib"
 os.environ["LD_LIBRARY_PATH"] = LIB + ":" + os.environ.get("LD_LIBRARY_PATH", "")
 
+OPEN_MARKER  = "\u0001"
+CLOSE_MARKER = "\u0002"
+
 DOMAINS_LOOKUP = { 
                    0: "", 
                    1: "INI", 
@@ -178,7 +181,16 @@ def discordifyHTML(rawhtml:str, images:list=None):
     discordified = re.sub("<p.*?>", "", discordified)
     discordified = re.sub("</p.*?>", "\n", discordified)
 
-    discordified = re.sub("</?em.*?>", "*", discordified)
+    # replace all <em> tags with a marker
+    discordified = re.sub(r"<em[^>]*>", OPEN_MARKER, discordified)
+    discordified = re.sub(r"</em\s*>", CLOSE_MARKER, discordified)
+
+    # if an opening marker and closing marker are right next to each other, delete both
+    discordified = re.sub(CLOSE_MARKER + r"\s*" + OPEN_MARKER, "", discordified)
+
+    # replace markers with asterisks
+    discordified = discordified.replace(OPEN_MARKER, "*").replace(CLOSE_MARKER, "*")
+
     discordified = re.sub(
         r'<span[^>]*\bclass="[^"]*\bsr-only\b[^"]*"[^>]*>\s*blank\s*</span>',
         "",
